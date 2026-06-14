@@ -1,0 +1,19 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database
+jobs.db
+
+# Excel exports
+*.xlsx
+
+# macOS system files
+.DS_Store

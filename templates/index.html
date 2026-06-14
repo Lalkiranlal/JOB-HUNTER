@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter | Flutter Developer Scraper & Tracker</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="logo-icon"><i class="fa-brands fa-flutter"></i></div>
+                <div class="logo-text">
+                    <h1>Job Hunter</h1>
+                    <p>Global Flutter Job Scraper & Application Tracker</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="open-scrape-btn" class="btn btn-primary btn-glow">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Scrape New Jobs
+                </button>
+                <button id="export-excel-btn" class="btn btn-secondary">
+                    <i class="fa-regular fa-file-excel"></i> Export to Excel
+                </button>
+                <button id="clear-jobs-btn" class="btn btn-danger">
+                    <i class="fa-regular fa-trash-can"></i> Clear All Jobs
+                </button>
+            </div>
+        </header>
+
+        <!-- Metrics Section -->
+        <section class="metrics-grid" id="kpi-section">
+            <div class="metric-card">
+                <div class="metric-info">
+                    <span class="metric-label">Total Flutter Jobs</span>
+                    <span class="metric-value" id="stat-total">0</span>
+                </div>
+                <div class="metric-icon val-blue"><i class="fa-solid fa-briefcase"></i></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-info">
+                    <span class="metric-label">Remote Jobs</span>
+                    <span class="metric-value" id="stat-remote">0</span>
+                </div>
+                <div class="metric-icon val-purple"><i class="fa-solid fa-house-laptop"></i></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-info">
+                    <span class="metric-label">Applied</span>
+                    <span class="metric-value" id="stat-applied">0</span>
+                </div>
+                <div class="metric-icon val-green"><i class="fa-solid fa-paper-plane"></i></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-info">
+                    <span class="metric-label">Interviewing</span>
+                    <span class="metric-value" id="stat-interviewing">0</span>
+                </div>
+                <div class="metric-icon val-yellow"><i class="fa-solid fa-comments"></i></div>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Filter Toolbar -->
+            <div class="toolbar">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search by title, company, or city...">
+                </div>
+                
+                <div class="filters-group">
+                    <select id="filter-country" class="select-field">
+                        <option value="">All Countries</option>
+                        <option value="United States">United States</option>
+                        <option value="India">India</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="United Arab Emirates">United Arab Emirates</option>
+                        <option value="Remote">Remote Only (Loc)</option>
+                        <option value="Global">Other Global</option>
+                    </select>
+
+                    <select id="filter-site" class="select-field">
+                        <option value="">All Job Boards</option>
+                        <!-- Major General -->
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="google">Google Jobs</option>
+                        <option value="indeed">Indeed</option>
+                        <option value="glassdoor">Glassdoor</option>
+                        <option value="zip_recruiter">ZipRecruiter</option>
+                        <!-- Tech/Startup -->
+                        <option value="wellfound">Wellfound (AngelList)</option>
+                        <option value="instahyre">Instahyre</option>
+                        <option value="cutshort">Cutshort</option>
+                        <option value="hirist">Hirist</option>
+                        <option value="weworkremotely">We Work Remotely</option>
+                        <option value="remoteok">RemoteOK</option>
+                        <option value="remotive">Remotive</option>
+                        <option value="himalayas">Himalayas</option>
+                        <!-- Premium/Leadership -->
+                        <option value="iimjobs">iimjobs</option>
+                        <option value="theladders">The Ladders</option>
+                        <!-- Entry-Level/Modern -->
+                        <option value="simplify">Simplify</option>
+                        <option value="flexjobs">FlexJobs</option>
+                        <option value="remoteco">Remote.co</option>
+                        <option value="internshala">Internshala</option>
+                        <option value="unstop">Unstop</option>
+                        <!-- International Regional -->
+                        <option value="bayt">Bayt.com</option>
+                        <option value="naukri">Naukri</option>
+                        <option value="bdjobs">BDJobs</option>
+                    </select>
+
+                    <select id="filter-status" class="select-field">
+                        <option value="">All Statuses</option>
+                        <option value="Not Applied">Not Applied</option>
+                        <option value="Interested">Interested</option>
+                        <option value="Applied">Applied</option>
+                        <option value="Interviewing">Interviewing</option>
+                        <option value="Offer">Offer Received</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+
+                    <select id="filter-remote" class="select-field">
+                        <option value="">All Work Types</option>
+                        <option value="true">Remote Only</option>
+                        <option value="false">On-site/Hybrid</option>
+                    </select>
+                </div>
+
+                <div class="view-toggle">
+                    <button id="view-grid-btn" class="toggle-btn active" title="Grid View"><i class="fa-solid fa-grid-2"></i><i class="fa-solid fa-table-cells-large"></i></button>
+                    <button id="view-list-btn" class="toggle-btn" title="Spreadsheet View"><i class="fa-solid fa-list"></i></button>
+                </div>
+            </div>
+
+            <!-- Scrape Terminal (Appears when scraping) -->
+            <div id="scrape-console" class="console-card hidden">
+                <div class="console-header">
+                    <div class="console-title">
+                        <span class="pulse-indicator"></span>
+                        <i class="fa-solid fa-terminal"></i> Scraper Terminal Activity
+                    </div>
+                    <button id="close-console-btn" class="console-close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="console-body" id="console-logs">
+                    <!-- Streamed logs go here -->
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-view">
+                <!-- Loader -->
+                <div id="content-loader" class="loader-container hidden">
+                    <div class="loader"></div>
+                    <p>Loading jobs data...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="empty-state-card hidden">
+                    <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+                    <h3>No Flutter Jobs Found</h3>
+                    <p>Try clearing your filters or click "Scrape New Jobs" to fetch listings from LinkedIn, Google Jobs, ZipRecruiter, and Indeed.</p>
+                    <button id="empty-scrape-btn" class="btn btn-primary mt-3"><i class="fa-solid fa-plus"></i> Run First Scrape</button>
+                </div>
+
+                <!-- Grid View -->
+                <div id="jobs-grid" class="jobs-grid-layout">
+                    <!-- Cards will be injected here -->
+                </div>
+
+                <!-- Table View -->
+                <div id="jobs-table-container" class="jobs-table-layout hidden">
+                    <table class="jobs-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Board</th>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Country</th>
+                                <th style="width: 130px;">Posted Date</th>
+                                <th style="width: 160px;">Salary Range</th>
+                                <th style="width: 170px;">Application Status</th>
+                                <th style="width: 100px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-table-body">
+                            <!-- Table rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scraper Panel Drawer (Slide-out from Right) -->
+    <div id="scraper-drawer" class="drawer">
+        <div class="drawer-overlay" id="scraper-drawer-overlay"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h2>Configure Job Scraper</h2>
+                <button class="drawer-close" id="close-scrape-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <form id="scraper-form" class="drawer-body">
+                <div class="form-group">
+                    <label for="scrape-search-term">Search Keyword</label>
+                    <input type="text" id="scrape-search-term" value="Flutter Developer" required>
+                    <span class="field-desc">e.g. Flutter Developer, Flutter Architect, Dart Developer</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="scrape-hours">Timeframe</label>
+                        <select id="scrape-hours">
+                            <option value="24">Past 24 Hours</option>
+                            <option value="48">Past 48 Hours (2 Days)</option>
+                            <option value="72" selected>Past 72 Hours (3 Days)</option>
+                            <option value="168">Past Week (7 Days)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="scrape-results">Results Per Board</label>
+                        <input type="number" id="scrape-results" value="25" min="5" max="100">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="scrape-location">Search Location</label>
+                    <input type="text" id="scrape-location" value="Remote">
+                    <span class="field-desc">Set to 'Remote' or empty for global, or a country/city</span>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="scrape-remote-only" checked>
+                        <span class="checkmark"></span>
+                        Filter strictly remote jobs (is_remote=True)
+                    </label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="scrape-clear-before">
+                        <span class="checkmark"></span>
+                        Clear database before scraping
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Job Boards</label>
+                    
+                    <h4 class="drawer-section-title">Major General Platforms</h4>
+                    <div class="boards-selection">
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="linkedin" checked>
+                            <span class="board-card linkedin"><i class="fa-brands fa-linkedin"></i> LinkedIn</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="google" checked>
+                            <span class="board-card google"><i class="fa-brands fa-google"></i> Google Jobs</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="indeed" checked>
+                            <span class="board-card indeed"><i class="fa-solid fa-info-circle"></i> Indeed</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="glassdoor" checked>
+                            <span class="board-card glassdoor"><i class="fa-solid fa-glasses"></i> Glassdoor</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="zip_recruiter" checked>
+                            <span class="board-card zip_recruiter"><i class="fa-solid fa-z"></i> ZipRecruiter</span>
+                        </label>
+                    </div>
+                    
+                    <h4 class="drawer-section-title mt-2">Underrated Tech & Startup Platforms</h4>
+                    <div class="boards-selection">
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="wellfound" checked>
+                            <span class="board-card wellfound"><i class="fa-solid fa-peace"></i> Wellfound</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="instahyre" checked>
+                            <span class="board-card instahyre"><i class="fa-solid fa-bolt-lightning"></i> Instahyre</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="cutshort" checked>
+                            <span class="board-card cutshort"><i class="fa-solid fa-scissors"></i> Cutshort</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="hirist" checked>
+                            <span class="board-card hirist"><i class="fa-solid fa-brain"></i> Hirist</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="weworkremotely" checked>
+                            <span class="board-card weworkremotely"><i class="fa-solid fa-globe"></i> WWR</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="remoteok" checked>
+                            <span class="board-card remoteok"><i class="fa-solid fa-laptop-code"></i> RemoteOK</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="remotive" checked>
+                            <span class="board-card remotive"><i class="fa-solid fa-network-wired"></i> Remotive</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="himalayas" checked>
+                            <span class="board-card himalayas"><i class="fa-solid fa-mountain"></i> Himalayas</span>
+                        </label>
+                    </div>
+                    
+                    <h4 class="drawer-section-title mt-2">Premium & Leadership Tracks</h4>
+                    <div class="boards-selection">
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="iimjobs" checked>
+                            <span class="board-card iimjobs"><i class="fa-solid fa-graduation-cap"></i> iimjobs</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="theladders" checked>
+                            <span class="board-card theladders"><i class="fa-solid fa-stairs"></i> The Ladders</span>
+                        </label>
+                    </div>
+                    
+                    <h4 class="drawer-section-title mt-2">Entry-Level, Remote, & Modern Hubs</h4>
+                    <div class="boards-selection">
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="simplify" checked>
+                            <span class="board-card simplify"><i class="fa-solid fa-sparkles"></i> Simplify</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="flexjobs" checked>
+                            <span class="board-card flexjobs"><i class="fa-solid fa-shuffle"></i> FlexJobs</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="remoteco" checked>
+                            <span class="board-card remoteco"><i class="fa-solid fa-house-laptop"></i> Remote.co</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="internshala" checked>
+                            <span class="board-card internshala"><i class="fa-solid fa-user-graduate"></i> Internshala</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="unstop" checked>
+                            <span class="board-card unstop"><i class="fa-solid fa-flag"></i> Unstop</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="bayt" checked>
+                            <span class="board-card bayt"><i class="fa-solid fa-b"></i> Bayt.com</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="naukri" checked>
+                            <span class="board-card naukri"><i class="fa-solid fa-n"></i> Naukri</span>
+                        </label>
+                        <label class="board-checkbox-container">
+                            <input type="checkbox" name="scrape-boards" value="bdjobs" checked>
+                            <span class="board-card bdjobs"><i class="fa-solid fa-briefcase"></i> BDJobs</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="indeed-country-wrapper">
+                    <label for="scrape-indeed-country">Indeed Region Country Code</label>
+                    <select id="scrape-indeed-country">
+                        <option value="USA" selected>United States (USA)</option>
+                        <option value="UK">United Kingdom (UK)</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Germany">Germany</option>
+                        <option value="India">India</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                    <span class="field-desc">Indeed requires a country code to query the correct database</span>
+                </div>
+
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-scrape-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Scrape</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Job Details Drawer (Slide-out from Right) -->
+    <div id="details-drawer" class="drawer">
+        <div class="drawer-overlay" id="details-drawer-overlay"></div>
+        <div class="drawer-content details-content">
+            <div class="drawer-header">
+                <div class="details-header-info">
+                    <span id="detail-board-badge" class="site-badge">LINKEDIN</span>
+                    <h2 id="detail-title">Flutter Developer</h2>
+                    <p id="detail-company-loc"><span class="company" id="detail-company">Google</span> &bull; <span class="loc" id="detail-location">Remote, US</span></p>
+                </div>
+                <button class="drawer-close" id="close-details-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="drawer-body">
+                <div class="details-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Employment Type</span>
+                        <span class="meta-val" id="detail-job-type">Full-time</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Date Posted</span>
+                        <span class="meta-val" id="detail-date-posted">June 14, 2026</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Salary Range</span>
+                        <span class="meta-val" id="detail-salary">Not Disclosed</span>
+                    </div>
+                </div>
+
+                <!-- Tracker fields -->
+                <div class="tracker-form-card">
+                    <h3>Application State Tracker</h3>
+                    <div class="form-row mt-2">
+                        <div class="form-group col-6">
+                            <label for="detail-status">Status</label>
+                            <select id="detail-status" class="select-field">
+                                <option value="Not Applied">Not Applied</option>
+                                <option value="Interested">Interested</option>
+                                <option value="Applied">Applied</option>
+                                <option value="Interviewing">Interviewing</option>
+                                <option value="Offer">Offer Received</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6" id="detail-date-applied-group">
+                            <label>Date Applied</label>
+                            <div class="read-only-date" id="detail-date-applied">N/A</div>
+                        </div>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="detail-notes">Application Notes</label>
+                        <textarea id="detail-notes" rows="3" placeholder="Add interviews dates, contact info, salary offer details..."></textarea>
+                    </div>
+                    <button class="btn btn-secondary btn-sm mt-2" id="save-details-tracker-btn"><i class="fa-regular fa-floppy-disk"></i> Save Status & Notes</button>
+                </div>
+
+                <div class="details-desc-section">
+                    <h3>Job Description</h3>
+                    <div class="description-text" id="detail-description">
+                        <!-- Description text goes here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drawer-footer details-footer">
+                <a href="#" target="_blank" id="detail-apply-link" class="btn btn-primary w-100 text-center"><i class="fa-solid fa-arrow-up-right-from-square"></i> Apply on External Board</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
