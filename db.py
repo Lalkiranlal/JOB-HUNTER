@@ -5,6 +5,11 @@ from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jobs.db")
 
+# Vercel has a read-only filesystem except for /tmp.
+# If running on Vercel, put the SQLite db in /tmp.
+if os.environ.get('VERCEL') == '1':
+    DB_PATH = "/tmp/jobs.db"
+
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
