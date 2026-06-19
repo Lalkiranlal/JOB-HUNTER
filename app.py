@@ -23,12 +23,16 @@ CORS(app)
 # Ensure DB is initialized
 db.init_db()
 
+def get_session_id():
+    return request.headers.get('X-Session-Id') or request.args.get('session_id') or 'default'
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/api/jobs', methods=['GET'])
 def get_jobs():
+    session_id = get_session_id()
     filters = {
         'status': request.args.get('status'),
         'site': request.args.get('site'),
@@ -44,11 +48,12 @@ def get_jobs():
         elif is_remote_param.lower() in ['false', '0']:
             filters['is_remote'] = False
             
-    jobs = db.get_jobs(filters)
+    jobs = db.get_jobs(filters, session_id=session_id)
     return jsonify(jobs)
 
 @app.route('/api/jobs/<job_id>', methods=['PUT'])
 def update_job(job_id):
+    session_id = get_session_id()
     data = request.json or {}
     status = data.get('status')
     notes = data.get('notes')
@@ -56,18 +61,20 @@ def update_job(job_id):
     if not status:
         return jsonify({'error': 'Status is required'}), 400
         
-    db.update_job_status(job_id, status, notes)
+    db.update_job_status(job_id, status, notes, session_id=session_id)
     return jsonify({'message': 'Job updated successfully'})
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    stats = db.get_stats()
+    session_id = get_session_id()
+    stats = db.get_stats(session_id=session_id)
     return jsonify(stats)
 
 @app.route('/api/jobs/clear', methods=['POST'])
 def clear_jobs():
+    session_id = get_session_id()
     try:
-        db.clear_all_jobs()
+        db.clear_all_jobs(session_id=session_id)
         return jsonify({'message': 'All jobs cleared successfully'})
     except Exception as e:
         logger.error(f"Error clearing jobs: {str(e)}")
@@ -78,6 +85,7 @@ def run_scrape():
     """
     Triggers scraping and streams output using Server-Sent Events (SSE)
     """
+    session_id = get_session_id()
     search_term = request.args.get('search_term', 'Flutter Developer')
     location = request.args.get('location', 'Remote')
     hours_old = int(request.args.get('hours_old', 72))
@@ -99,7 +107,7 @@ def run_scrape():
         
         if clear_before:
             try:
-                db.clear_all_jobs()
+                db.clear_all_jobs(session_id=session_id)
                 clear_msg = json.dumps({'message': 'Existing jobs cleared from database.\n'})
                 yield f"data: {clear_msg}\n\n"
             except Exception as e:
@@ -114,7 +122,8 @@ def run_scrape():
                 hours_old=hours_old,
                 results_per_site=results_per_site,
                 sites=sites,
-                country_indeed=country_indeed
+                country_indeed=country_indeed,
+                session_id=session_id
             )
             for progress_msg in generator:
                 yield f"data: {json.dumps({'message': progress_msg})}\n\n"
@@ -134,6 +143,7 @@ def export_jobs():
     Generates and downloads a beautifully styled Excel spreadsheet with job details
     and application trackers.
     """
+    session_id = get_session_id()
     # Fetch all jobs matching user's current filters
     filters = {
         'status': request.args.get('status'),
@@ -148,7 +158,7 @@ def export_jobs():
         elif is_remote_param.lower() in ['false', '0']:
             filters['is_remote'] = False
             
-    jobs = db.get_jobs(filters)
+    jobs = db.get_jobs(filters, session_id=session_id)
     
     # Create workbook
     wb = Workbook()

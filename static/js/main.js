@@ -4,6 +4,16 @@ let currentView = 'grid'; // 'grid' or 'list'
 let activeJobId = null;
 let eventSource = null;
 
+function getSessionId() {
+    let sid = localStorage.getItem('session_id');
+    if (!sid) {
+        sid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('session_id', sid);
+    }
+    return sid;
+}
+const SESSION_ID = getSessionId();
+
 // DOM Elements
 const jobsGrid = document.getElementById('jobs-grid');
 const jobsTableContainer = document.getElementById('jobs-table-container');
@@ -162,7 +172,7 @@ function setView(view) {
 // Load statistics metrics
 async function loadStats() {
     try {
-        const res = await fetch('/api/stats');
+        const res = await fetch('/api/stats', { headers: { 'X-Session-Id': SESSION_ID } });
         const stats = await res.json();
         
         document.getElementById('stat-total').innerText = stats.total || 0;
@@ -202,7 +212,7 @@ async function loadJobs() {
 
     try {
         const query = getQueryString();
-        const res = await fetch(`/api/jobs?${query}`);
+        const res = await fetch(`/api/jobs?${query}`, { headers: { 'X-Session-Id': SESSION_ID } });
         jobsData = await res.json();
         
         renderJobs();
@@ -377,7 +387,7 @@ async function updateJobStatus(jobId, newStatus, dropdownElement) {
     try {
         const res = await fetch(`/api/jobs/${jobId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Session-Id': SESSION_ID },
             body: JSON.stringify({ status: newStatus })
         });
         
@@ -485,7 +495,7 @@ async function handleSaveDetailsTracker(closeAfterSave = true) {
     try {
         const res = await fetch(`/api/jobs/${activeJobId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Session-Id': SESSION_ID },
             body: JSON.stringify({ status, notes })
         });
         
@@ -546,7 +556,8 @@ function handleScrapeSubmit(e) {
         is_remote: remoteOnly,
         clear_before: clearBefore,
         sites: boards.join(','),
-        country_indeed: indeedCountry
+        country_indeed: indeedCountry,
+        session_id: SESSION_ID
     });
     
     closeDrawer(scraperDrawer);
@@ -597,7 +608,7 @@ function appendLog(text) {
 // Export excel spreadsheet navigation
 function handleExportExcel() {
     const query = getQueryString();
-    const url = `/api/export?${query}`;
+    const url = `/api/export?${query}&session_id=${SESSION_ID}`;
     const a = document.createElement('a');
     a.href = url;
     document.body.appendChild(a);
@@ -613,7 +624,8 @@ async function handleClearJobs() {
     
     try {
         const res = await fetch('/api/jobs/clear', {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'X-Session-Id': SESSION_ID }
         });
         
         if (res.ok) {

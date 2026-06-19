@@ -81,6 +81,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
             id TEXT PRIMARY KEY,
+            session_id TEXT DEFAULT 'default',
             site TEXT,
             title TEXT,
             company TEXT,
@@ -106,6 +107,12 @@ def init_db():
         cursor.execute("ALTER TABLE jobs ADD COLUMN country TEXT")
     except sqlite3.OperationalError:
         pass # Column already exists
+
+    # Run migration to add session_id column if database already exists
+    try:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN session_id TEXT DEFAULT 'default'")
+    except sqlite3.OperationalError:
+        pass # Column already exists
         
     conn.commit()
     conn.close()
@@ -113,15 +120,15 @@ def init_db():
     # Backfill country values
     backfill_countries()
 
-def generate_job_id(title, company, job_url):
-    # Create a unique ID from company, title, and job url to prevent duplicates
-    raw_str = f"{company.strip().lower()}|{title.strip().lower()}|{job_url.strip()}"
+def generate_job_id(title, company, job_url, session_id):
+    # Create a unique ID from company, title, job url, and session_id to prevent duplicates per user
+    raw_str = f"{company.strip().lower()}|{title.strip().lower()}|{job_url.strip()}|{session_id}"
     return hashlib.md5(raw_str.encode('utf-8')).hexdigest()
 
-def save_jobs(jobs_list):
+def save_jobs(jobs_list, session_id='default'):
     """
     Saves a list of dictionaries representing jobs into the DB.
-    If a job already exists, update its details but preserve status and notes.
+    If a job already exists for this session_id, update its details but preserve status and notes.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -136,7 +143,7 @@ def save_jobs(jobs_list):
         if not job_url:
             continue
             
-        job_id = generate_job_id(title, company, job_url)
+        job_id = generate_job_id(title, company, job_url, session_id)
         
         # Check if job exists
         cursor.execute("SELECT status, notes, date_applied FROM jobs WHERE id = ?", (job_id,))
@@ -148,11 +155,12 @@ def save_jobs(jobs_list):
             # New job
             cursor.execute("""
                 INSERT INTO jobs (
-                    id, site, title, company, location, country, job_type, date_posted, 
+                    id, session_id, site, title, company, location, country, job_type, date_posted, 
                     min_amount, max_amount, currency, is_remote, job_url, description
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job_id,
+                session_id,
                 job.get('site', 'unknown'),
                 title,
                 company,
@@ -185,7 +193,7 @@ def save_jobs(jobs_list):
                     is_remote = ?,
                     job_url = ?,
                     description = ?
-                WHERE id = ?
+                WHERE id = ? AND session_id = ?
             """, (
                 job.get('site', 'unknown'),
                 title,
@@ -200,7 +208,8 @@ def save_jobs(jobs_list):
                 is_remote_val,
                 job_url,
                 job.get('description', ''),
-                job_id
+                job_id,
+                session_id
             ))
         saved_count += 1
             
@@ -208,7 +217,7 @@ def save_jobs(jobs_list):
     conn.close()
     return new_count, saved_count
 
-def get_jobs(filters=None):
+def get_jobs(filters=None, session_id='default'):
     """
     Returns jobs based on filters like status, site, remote, search query, etc.
     """
@@ -217,7 +226,8 @@ def get_jobs(filters=None):
     
     query = "SELECT * FROM jobs"
     params = []
-    where_clauses = []
+    where_clauses = ["session_id = ?"]
+    params.append(session_id)
     
     if filters:
         if filters.get('status'):
@@ -250,7 +260,7 @@ def get_jobs(filters=None):
     conn.close()
     return jobs_list
 
-def update_job_status(job_id, status, notes=None):
+def update_job_status(job_id, status, notes=None, session_id='default'):
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -263,44 +273,44 @@ def update_job_status(job_id, status, notes=None):
             cursor.execute("""
                 UPDATE jobs 
                 SET status = ?, notes = ?, date_applied = COALESCE(date_applied, ?) 
-                WHERE id = ?
-            """, (status, notes, date_applied, job_id))
+                WHERE id = ? AND session_id = ?
+            """, (status, notes, date_applied, job_id, session_id))
         else:
             cursor.execute("""
                 UPDATE jobs 
                 SET status = ?, notes = ? 
-                WHERE id = ?
-            """, (status, notes, job_id))
+                WHERE id = ? AND session_id = ?
+            """, (status, notes, job_id, session_id))
     else:
         if status == 'Applied':
             cursor.execute("""
                 UPDATE jobs 
                 SET status = ?, date_applied = COALESCE(date_applied, ?) 
-                WHERE id = ?
-            """, (status, date_applied, job_id))
+                WHERE id = ? AND session_id = ?
+            """, (status, date_applied, job_id, session_id))
         else:
             cursor.execute("""
                 UPDATE jobs 
                 SET status = ? 
-                WHERE id = ?
-            """, (status, job_id))
+                WHERE id = ? AND session_id = ?
+            """, (status, job_id, session_id))
             
     conn.commit()
     conn.close()
 
-def get_stats():
+def get_stats(session_id='default'):
     conn = get_db_connection()
     cursor = conn.cursor()
     
     stats = {}
     
-    cursor.execute("SELECT COUNT(*) FROM jobs")
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE session_id = ?", (session_id,))
     stats['total'] = cursor.fetchone()[0]
     
-    cursor.execute("SELECT COUNT(*) FROM jobs WHERE is_remote = 1")
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE is_remote = 1 AND session_id = ?", (session_id,))
     stats['remote'] = cursor.fetchone()[0]
     
-    cursor.execute("SELECT status, COUNT(*) FROM jobs GROUP BY status")
+    cursor.execute("SELECT status, COUNT(*) FROM jobs WHERE session_id = ? GROUP BY status", (session_id,))
     status_counts = cursor.fetchall()
     for row in status_counts:
         stats[row[0].lower().replace(' ', '_')] = row[1]
@@ -313,10 +323,9 @@ def get_stats():
     conn.close()
     return stats
 
-def clear_all_jobs():
+def clear_all_jobs(session_id='default'):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM jobs")
+    cursor.execute("DELETE FROM jobs WHERE session_id = ?", (session_id,))
     conn.commit()
     conn.close()
-

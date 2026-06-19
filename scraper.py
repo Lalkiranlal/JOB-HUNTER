@@ -471,7 +471,7 @@ def parse_jobspy_df(df, site_name):
             
     return jobs
 
-def scrape_and_save_all(search_term="Flutter Developer", location="Remote", is_remote=True, hours_old=72, results_per_site=25, sites=None, country_indeed="USA"):
+def scrape_and_save_all(search_term="Flutter Developer", location="Remote", is_remote=True, hours_old=72, results_per_site=25, sites=None, country_indeed="USA", session_id="default"):
     """
     Orchestrates scraping multiple sites and saves new findings to the database.
     Yields progress string for Server-Sent Events (SSE).
@@ -536,7 +536,7 @@ def scrape_and_save_all(search_term="Flutter Developer", location="Remote", is_r
     
     if all_jobs:
         yield "Saving results and updating application tracker database...\n"
-        new_count, saved_count = save_jobs(all_jobs)
+        new_count, saved_count = save_jobs(all_jobs, session_id)
         yield f"Finished database sync. Saved {saved_count} jobs total, including {new_count} newly discovered jobs!\n"
     else:
         yield "No jobs to save.\n"
